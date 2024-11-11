@@ -5,10 +5,10 @@ declare module 'kenx/types/tables' {
   export interface Tables {
     users: {
       id: string
-      session_id: string
+      session_id?: string
       name: string
       email: string
-      avatar: string
+      avatar?: string
       created_at: string
       updated_at: string
     }
