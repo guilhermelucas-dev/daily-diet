@@ -12,7 +12,7 @@
 - [x] Deve ser possível apagar uma refeição;
 - [x] Deve ser possível listar todas as refeição de um usuário;
 - [x] Deve ser possível visualizar uma única refeição
-- [] Deve ser possível recuperar as métricas de um usuário:
+- [x] Deve ser possível recuperar as métricas de um usuário:
 
 - Quantidade total de refeições registradas
 - Quantidade total de refeições dentro da dieta

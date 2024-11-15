@@ -14,9 +14,10 @@ export function mealsRoutes(app: FastifyInstance) {
       name: z.string(),
       description: z.string(),
       is_diet: z.boolean(),
+      date: z.coerce.date(),
     });
 
-    const { user_id, name, description, is_diet } = createMealsBodySchema.parse(request.body);
+    const { user_id, name, description, is_diet, date } = createMealsBodySchema.parse(request.body);
 
     await knex('meals').insert(
       {
@@ -24,7 +25,8 @@ export function mealsRoutes(app: FastifyInstance) {
         user_id: user_id, 
         name: name,
         description: description,
-        is_diet: is_diet
+        is_diet: is_diet,
+        date: date
       }
     );
 
@@ -117,5 +119,43 @@ export function mealsRoutes(app: FastifyInstance) {
     await knex('meals').where('id', id).delete();
 
     return reply.status(204).send();
+  });
+
+  app.get("/metrics/:user_id", {preHandler: [checkSessionIdExists]}, async (request, reply) => {
+
+    const mealsOnDietSchema = z.object({
+      user_id: z.string().uuid()
+    });
+
+    const { user_id } = mealsOnDietSchema.parse(request.params);
+
+    const totalMealsOnDiet = await knex('meals').where('user_id', user_id).andWhere('is_diet', true).count('id', { as: 'total'}).first();
+
+    const totalMealsOffDiet = await knex('meals').where('user_id', user_id).andWhere('is_diet', false).count('id', { as: 'total'}).first();
+
+    const listOfMeals = await knex('meals').where('user_id', user_id).orderBy('date', 'desc');
+
+    const { bestOnDietSequence } = listOfMeals.reduce((acc, meal) => {
+      if (meal.is_diet) {
+        acc.currentSequence += 1;
+      } else {
+        acc.currentSequence = 0;
+      }
+
+      if (acc.currentSequence > acc.bestOnDietSequence) {
+        acc.bestOnDietSequence = acc.currentSequence
+      }
+
+      return acc
+      },
+      { bestOnDietSequence: 0, currentSequence: 0}
+    )
+
+    return reply.send({
+      totalMeals: listOfMeals.length,
+      totalMealsOnDiet: totalMealsOnDiet?.total,
+      totalMealsOffDiet: totalMealsOffDiet?.total,
+      bestOnDietSequence: bestOnDietSequence
+    })
   });
 }
